@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Training</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    padding: 10px 20px;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #58a6ff;
+    letter-spacing: 0.3px;
+  }
+
+  #slide-info {
+    font-size: 13px;
+    color: #8b949e;
+  }
+
+  #btn-fullscreen {
+    background: none;
+    border: 1px solid #30363d;
+    color: #8b949e;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  #btn-fullscreen:hover { border-color: #58a6ff; color: #58a6ff; }
+
+  #slide-title {
+    font-size: 13px;
+    color: #c9d1d9;
+    max-width: 500px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .viewer {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    padding: 16px 70px;
+  }
+
+  #slide-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 6px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.6);
+    transition: opacity 0.15s ease;
+  }
+
+  .nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(22, 27, 34, 0.85);
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+    z-index: 10;
+  }
+
+  .nav-btn:hover { background: #21262d; border-color: #58a6ff; color: #58a6ff; }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  #btn-prev { left: 12px; }
+  #btn-next { right: 12px; }
+
+  footer {
+    background: #161b22;
+    border-top: 1px solid #30363d;
+    padding: 10px 16px;
+    flex-shrink: 0;
+  }
+
+  #dots {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .dot {
+    width: 28px;
+    height: 8px;
+    border-radius: 4px;
+    background: #30363d;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    border: none;
+    position: relative;
+  }
+
+  .dot:hover { background: #58a6ff; transform: scaleY(1.3); }
+  .dot.active { background: #58a6ff; }
+  .dot .dot-label {
+    display: none;
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    font-size: 11px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .dot:hover .dot-label { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Claude Code Training</h1>
+  <span id="slide-title"></span>
+  <span id="slide-info"></span>
+  <button id="btn-fullscreen">⛶ Fullscreen</button>
+</header>
+
+<div class="viewer">
+  <button class="nav-btn" id="btn-prev" aria-label="Previous slide">&#8592;</button>
+  <img id="slide-img" alt="Slide" />
+  <button class="nav-btn" id="btn-next" aria-label="Next slide">&#8594;</button>
+</div>
+
+<footer>
+  <div id="dots"></div>
+</footer>
+
+<script>
+const slides = [
+  "1_Claude-Code-Foundations.png",
+  "2_Agenda.png",
+  "3_The-Human-Analogy.png",
+  "4_The-Parallel-You-Already-Know.png",
+  "5_Your-Senses-The-Prompt.png",
+  "6_The-Brain-The-Model.png",
+  "7_Memory-Human-and-AI.png",
+  "8_Core-AI-Concepts.png",
+  "9_Model-vs-Agent-Whats-the-Difference.png",
+  "10_Context-and-Context-Window.png",
+  "11_.png",
+  "12_Tools-How-AI-Acts-on-the-World.png",
+  "13_MCP-The-Universal-Connector.png",
+  "14_Vectors-and-Long-Term-Knowledge.png",
+  "15_Skills-Plugins-and-Procedural-Memory.png",
+  "16_Claude-Code-Basics.png",
+  "17_What-Is-Claude-Code.png",
+  "18_How-Claude-Code-Works-The-Agent-Loop.png",
+  "19_Claude-Code-in-Banking-Use-Cases.png",
+  "20_Guardrails-and-Governance.png",
+  "21_Why-Guardrails-Matter-for-Banking-AI.png",
+  "22_5-Guardrails-Every-Executive-Must-Know.png",
+  "23_Executive-Glossary.png"
+];
+
+function titleFromFilename(fn) {
+  const base = fn.replace(/^\d+_/, '').replace(/\.png$/, '');
+  return base ? base.replace(/-/g, ' ') : 'Slide';
+}
+
+let current = 0;
+
+const img = document.getElementById('slide-img');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const info = document.getElementById('slide-info');
+const titleEl = document.getElementById('slide-title');
+const dotsEl = document.getElementById('dots');
+
+// Build dots
+slides.forEach((fn, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'dot';
+  btn.title = titleFromFilename(fn);
+  const label = document.createElement('span');
+  label.className = 'dot-label';
+  label.textContent = `${i + 1}. ${titleFromFilename(fn)}`;
+  btn.appendChild(label);
+  btn.addEventListener('click', () => goTo(i));
+  dotsEl.appendChild(btn);
+});
+
+function goTo(n) {
+  current = n;
+  img.style.opacity = '0';
+  setTimeout(() => {
+    img.src = slides[current];
+    img.alt = titleFromFilename(slides[current]);
+    img.style.opacity = '1';
+  }, 80);
+  info.textContent = `${current + 1} / ${slides.length}`;
+  titleEl.textContent = titleFromFilename(slides[current]);
+  btnPrev.disabled = current === 0;
+  btnNext.disabled = current === slides.length - 1;
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+}
+
+btnPrev.addEventListener('click', () => current > 0 && goTo(current - 1));
+btnNext.addEventListener('click', () => current < slides.length - 1 && goTo(current + 1));
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' && current > 0) goTo(current - 1);
+  if (e.key === 'ArrowRight' && current < slides.length - 1) goTo(current + 1);
+});
+
+goTo(0);
+
+const btnFs = document.getElementById('btn-fullscreen');
+btnFs.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+});
+document.addEventListener('fullscreenchange', () => {
+  btnFs.textContent = document.fullscreenElement ? '✕ Exit Fullscreen' : '⛶ Fullscreen';
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'f' || e.key === 'F') btnFs.click();
+});
+</script>
+</body>
+</html>
